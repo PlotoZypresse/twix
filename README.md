@@ -1,2 +1,2 @@
 # twix
-Rust CLI tool to find duplicate images in a folder
+CLI tool to find duplicate images in a folder
