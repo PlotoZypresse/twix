@@ -7,12 +7,16 @@ import (
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
+	"io/fs"
 	"os"
+	"path/filepath"
 
 	"github.com/corona10/goimagehash"
 )
 
 func main() {
+
+	// folderPath := os.Args[1]
 
 	img1 := readImgBytes("test_images/a340-600.jpg")
 	img2 := readImgBytes("test_images/a340-600_copy.jpg")
@@ -54,11 +58,8 @@ func hashImgBytes(img []byte) []byte {
 	hash.Write(img)
 
 	imgHash := hash.Sum(nil)
+	fmt.Println(imgHash)
 	return imgHash
-}
-
-func storeImgHashes(hash []byte, fileName string) {
-
 }
 
 // Function to create a perceptual hash (phash) of an image.
@@ -70,7 +71,7 @@ func pHashImgBytes(img []byte) *goimagehash.ImageHash {
 	imgDecode, _, err := image.Decode(bytes.NewReader(img))
 	check(err)
 	imgHash, _ := goimagehash.PerceptionHash(imgDecode)
-
+	fmt.Println(imgHash)
 	return imgHash
 
 	// var b bytes.Buffer
@@ -84,4 +85,56 @@ func pHashImgBytes(img []byte) *goimagehash.ImageHash {
 func pHashCompare(img1 *goimagehash.ImageHash, img2 *goimagehash.ImageHash) int {
 	distance, _ := img1.Distance(img2)
 	return distance
+}
+
+func storeImgHashes(hash []byte, fileName string, hashMap map[string]string) (val string) {
+	hashStr := string(hash)
+	val, ok := hashMap[hashStr]
+	if ok == true {
+		return val
+	} else {
+		hashMap[hashStr] = fileName
+		return
+	}
+}
+
+func storePHashes(imgPHash *goimagehash.ImageHash, fileName string) {
+
+}
+
+// Function that compares all iamges from a folder.
+// depending on the operation input it compares
+// only the hashes, only the pHashes or both.
+func checkDupes(operation int, folder string) {
+	duplicateImgs := []string{}
+
+	switch operation {
+	case 1: // only hash
+		var hashMap = make(map[string]string)
+		err := filepath.WalkDir(folder, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() {
+				return nil
+			}
+			imgBytes := readImgBytes(path)
+			hash := hashImgBytes(imgBytes)
+			val := storeImgHashes(hash, path, hashMap)
+
+			if val != "" {
+				duplicateImgs = append(duplicateImgs, val)
+			}
+
+			return nil
+
+		})
+		check(err)
+
+	case 2: // only phash
+
+	case 3: // phash and has
+
+	default: // default is hash
+	}
 }
