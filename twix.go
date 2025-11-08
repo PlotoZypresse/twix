@@ -96,7 +96,7 @@ func pHashCompare(pHashList []store_phash) []dup_img {
 	for i := 0; i < len(pHashList); i++ {
 		for j := i + 1; j < len(pHashList); j++ {
 			distance, _ := pHashList[i].imgPHash.Distance(pHashList[j].imgPHash)
-			if distance <= 10 {
+			if distance <= 2 {
 				img := dup_img{
 					imgPath1: pHashList[i].filename,
 					imgPath2: pHashList[j].filename,
