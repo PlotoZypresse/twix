@@ -20,11 +20,15 @@ type dup_img struct {
 	imgPath2 string
 }
 
-func main() {
+type store_phash struct {
+	imgPHash *goimagehash.ImageHash
+	filename string
+}
 
+func main() {
 	folderPath := os.Args[1]
 	now := time.Now()
-	checkDupes(1, folderPath)
+	checkDupes(2, folderPath)
 	elapsed := time.Since(now)
 	fmt.Println("Finding duplicates took: ", elapsed)
 }
@@ -35,18 +39,40 @@ func check(e error) {
 	}
 }
 
+// reads the bytes of the image input and returns them.
+// takes a path to an image as input. Returns []bytes.
 func readImgBytes(imgPath string) []byte {
 	data, err := os.ReadFile(imgPath)
 	check(err)
 	return data
 }
 
+// Function that hashes the bytes of an image.
+// takes []bytes as input and returns []bytes.
 func hashImgBytes(img []byte) []byte {
 	hash := sha256.New()
 	hash.Write(img)
 
 	imgHash := hash.Sum(nil)
 	return imgHash
+}
+
+// Function to store image hashes and the corresponding file name in a map.
+// on collision both file names are stored in a struct and returned.
+// Takes the file hash(bytes), the file name as a string and a map[string]string
+// as input
+func storeImgHashes(hash []byte, fileName string, hashMap map[string]string) *dup_img {
+	hashStr := string(hash)
+	val, ok := hashMap[hashStr]
+	if ok {
+		return &dup_img{
+			imgPath1: fileName,
+			imgPath2: val,
+		}
+	} else {
+		hashMap[hashStr] = fileName
+		return nil
+	}
 }
 
 // Function to create a perceptual hash (phash) of an image.
@@ -61,28 +87,33 @@ func pHashImgBytes(img []byte) *goimagehash.ImageHash {
 	return imgHash
 }
 
-func pHashCompare(img1 *goimagehash.ImageHash, img2 *goimagehash.ImageHash) int {
-	distance, _ := img1.Distance(img2)
-	return distance
-}
-
-func storeImgHashes(hash []byte, fileName string, hashMap map[string]string) *dup_img {
-	hashStr := string(hash)
-	val, ok := hashMap[hashStr]
-	if ok {
-		return &dup_img{
-			imgPath1: fileName,
-			imgPath2: val,
+// Function that compares all the phashes in a slice. It adds all below a specified distance
+// threshold to a duplicate list that is passed.
+func pHashCompare(pHashList []store_phash) []dup_img {
+	duplicateList := []dup_img{}
+	for i := 0; i < len(pHashList); i++ {
+		for j := i + 1; j < len(pHashList); j++ {
+			distance, _ := pHashList[i].imgPHash.Distance(pHashList[j].imgPHash)
+			if distance <= 25 {
+				img := dup_img{
+					imgPath1: pHashList[i].filename,
+					imgPath2: pHashList[j].filename,
+				}
+				duplicateList = append(duplicateList, img)
+			}
 		}
-
-	} else {
-		hashMap[hashStr] = fileName
-		return nil
 	}
+	return duplicateList
 }
 
-func storePHashes(imgPHash *goimagehash.ImageHash, fileName string) {
-
+// Function to store an images pHash value and filename in a slice.
+// The slice is made up of store_phash(struct) elements.
+func storePHashes(imgPHash *goimagehash.ImageHash, fileName string) *store_phash {
+	return &store_phash{
+		imgPHash: imgPHash,
+		filename: fileName,
+	}
+	// pHashList = append(pHashList, img)
 }
 
 // Function that compares all iamges from a folder.
@@ -110,18 +141,36 @@ func checkDupes(operation int, folder string) {
 			}
 
 			return nil
-
 		})
 		check(err)
 		prettyPrint(duplicateImgs)
 	case 2: // only phash
+		pHashList := []store_phash{}
+		err := filepath.WalkDir(folder, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() {
+				return nil
+			}
+			imgBytes := readImgBytes(path)
+			pHash := pHashImgBytes(imgBytes)
+			img := storePHashes(pHash, path)
+			pHashList = append(pHashList, *img)
 
+			return nil
+		})
+		check(err)
+		duplicateImgs := pHashCompare(pHashList)
+		prettyPrint(duplicateImgs)
 	case 3: // phash and has
 
 	default: // default is hash
 	}
 }
 
+// Pretty prints the contents of a slice containing
+// dup_img structs
 func prettyPrint(input []dup_img) {
 	for _, item := range input {
 		fmt.Println("Duplicate images found at:", item.imgPath1, "and", item.imgPath2)
