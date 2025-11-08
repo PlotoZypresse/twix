@@ -80,11 +80,13 @@ func storeImgHashes(hash []byte, fileName string, hashMap map[string]string) *du
 // and creates an pHash value. To return bytes again, the code allocates a
 // buffer *b*, creates a Writer to write to *b*. The img pHash is written
 // as bytes to *b* and flushed to be returned
-func pHashImgBytes(img []byte) *goimagehash.ImageHash {
+func pHashImgBytes(img []byte) (*goimagehash.ImageHash, error) {
 	imgDecode, _, err := image.Decode(bytes.NewReader(img))
-	check(err)
+	if err != nil {
+		return nil, err
+	}
 	imgHash, _ := goimagehash.PerceptionHash(imgDecode)
-	return imgHash
+	return imgHash, nil
 }
 
 // Function that compares all the phashes in a slice. It adds all below a specified distance
@@ -94,7 +96,7 @@ func pHashCompare(pHashList []store_phash) []dup_img {
 	for i := 0; i < len(pHashList); i++ {
 		for j := i + 1; j < len(pHashList); j++ {
 			distance, _ := pHashList[i].imgPHash.Distance(pHashList[j].imgPHash)
-			if distance <= 25 {
+			if distance <= 10 {
 				img := dup_img{
 					imgPath1: pHashList[i].filename,
 					imgPath2: pHashList[j].filename,
@@ -132,6 +134,11 @@ func checkDupes(operation int, folder string) {
 			if d.IsDir() {
 				return nil
 			}
+
+			if !isImage(path) {
+				return nil
+			}
+
 			imgBytes := readImgBytes(path)
 			hash := hashImgBytes(imgBytes)
 			val := storeImgHashes(hash, path, hashMap)
@@ -153,8 +160,17 @@ func checkDupes(operation int, folder string) {
 			if d.IsDir() {
 				return nil
 			}
+
+			if !isImage(path) {
+				return nil
+			}
+
 			imgBytes := readImgBytes(path)
-			pHash := pHashImgBytes(imgBytes)
+			pHash, err := pHashImgBytes(imgBytes)
+			if err != nil {
+				fmt.Printf("Warning: Skipping %s - %v\n", path, err)
+				return nil
+			}
 			img := storePHashes(pHash, path)
 			pHashList = append(pHashList, *img)
 
@@ -175,4 +191,15 @@ func prettyPrint(input []dup_img) {
 	for _, item := range input {
 		fmt.Println("Duplicate images found at:", item.imgPath1, "and", item.imgPath2)
 	}
+}
+
+func isImage(path string) bool {
+	ext := filepath.Ext(path)
+	switch ext {
+	case ".jpg", ".jpeg", ".png":
+		return true
+	default:
+		return false
+	}
+
 }
