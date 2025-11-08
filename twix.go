@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/corona10/goimagehash"
 )
@@ -22,29 +23,10 @@ type dup_img struct {
 func main() {
 
 	folderPath := os.Args[1]
+	now := time.Now()
 	checkDupes(1, folderPath)
-
-	// img1 := readImgBytes("test_images/a340-600.jpg")
-	// img2 := readImgBytes("test_images/a340-600_copy.jpg")
-	// img3 := readImgBytes("test_images/concord.jpg")
-
-	// img1hash := hashImgBytes(img1)
-	// img2hash := hashImgBytes(img2)
-	// // img3hash := hashImgBytes(img3)
-
-	// compare := bytes.Compare(img1hash, img2hash)
-
-	// if compare == 0 {
-	// 	fmt.Println("Duplicate image")
-	// } else {
-	// 	fmt.Println("Not duplicate")
-	// }
-
-	// img1pHash := pHashImgBytes(img1)
-	// // img2pHash := pHashImgBytes(img2)
-	// img3pHash := pHashImgBytes(img3)
-	// distance := pHashCompare(img1pHash, img3pHash)
-	// fmt.Printf("Distance between passed images: %v\n", distance)
+	elapsed := time.Since(now)
+	fmt.Println("Finding duplicates took: ", elapsed)
 }
 
 func check(e error) {
@@ -64,7 +46,6 @@ func hashImgBytes(img []byte) []byte {
 	hash.Write(img)
 
 	imgHash := hash.Sum(nil)
-	// fmt.Println(imgHash)
 	return imgHash
 }
 
@@ -77,15 +58,7 @@ func pHashImgBytes(img []byte) *goimagehash.ImageHash {
 	imgDecode, _, err := image.Decode(bytes.NewReader(img))
 	check(err)
 	imgHash, _ := goimagehash.PerceptionHash(imgDecode)
-	// fmt.Println(imgHash)
 	return imgHash
-
-	// var b bytes.Buffer
-	// imgBuf := bufio.NewWriter(&b)
-	// _ = imgHash.Dump(imgBuf)
-	// imgBuf.Flush()
-	// imgBytes := b.Bytes()
-	// return imgBytes
 }
 
 func pHashCompare(img1 *goimagehash.ImageHash, img2 *goimagehash.ImageHash) int {
@@ -98,7 +71,7 @@ func storeImgHashes(hash []byte, fileName string, hashMap map[string]string) *du
 	val, ok := hashMap[hashStr]
 	if ok {
 		return &dup_img{
-			imgPath1: hashStr,
+			imgPath1: fileName,
 			imgPath2: val,
 		}
 
