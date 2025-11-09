@@ -41,11 +41,11 @@ func main() {
 	flag.Parse()
 
 	if flag.NArg() < 1 {
-		fmt.Println("Usage: twix <folder path> [-h] [-p] [-hp] [-distance=N]")
+		fmt.Println("Usage: twix [-h] [-p] [-hp] [-distance=N] <folder path> ")
 		fmt.Println("Examples:")
 		fmt.Println("  twix /path/to/folder")
-		fmt.Println("  twix /path/to/folder -p -distance=10")
-		fmt.Println("  twix /path/to/folder -hp")
+		fmt.Println("  twix -p -distance=10 /path/to/folder")
+		fmt.Println("  twix -hp /path/to/folder")
 		os.Exit(1)
 	}
 
