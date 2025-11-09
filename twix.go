@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/sha256"
+	"flag"
 	"fmt"
 	"image"
 	_ "image/jpeg"
@@ -26,20 +27,41 @@ type store_phash struct {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: twix <folder path> [mode]")
+
+	var distance int
+	var hMode bool
+	var pMode bool
+	var hpMode bool
+
+	flag.IntVar(&distance, "distance", 5, "Distance threshold for perceptual hashing. Default is 5")
+	flag.BoolVar(&hMode, "h", false, "Hash mode flag")
+	flag.BoolVar(&pMode, "p", false, "Perceptual hashing mode")
+	flag.BoolVar(&hpMode, "hp", false, "Hash and perceptual hash mode")
+
+	flag.Parse()
+
+	if flag.NArg() < 1 {
+		fmt.Println("Usage: twix <folder path> [-h] [-p] [-hp] [-distance=N]")
+		fmt.Println("Examples:")
+		fmt.Println("  twix /path/to/folder")
+		fmt.Println("  twix /path/to/folder -p -distance=10")
+		fmt.Println("  twix /path/to/folder -hp")
 		os.Exit(1)
 	}
 
-	folderPath := os.Args[1]
-	flagIn := ""
-	if len(os.Args) > 2 {
-		flagIn = os.Args[2]
+	folderPath := flag.Arg(0)
+
+	operatingMode := 1
+	if hMode {
+		operatingMode = 1
+	} else if pMode {
+		operatingMode = 2
+	} else if hpMode {
+		operatingMode = 3
 	}
 
-	flag := inputFlag(flagIn)
 	now := time.Now()
-	checkDupes(flag, folderPath)
+	checkDupes(operatingMode, folderPath, distance)
 	elapsed := time.Since(now)
 	fmt.Println("Finding duplicates took: ", elapsed)
 }
@@ -117,12 +139,12 @@ func pHashImgBytes(img []byte) (*goimagehash.ImageHash, error) {
 
 // Function that compares all the phashes in a slice. It adds all below a specified distance
 // threshold to a duplicate list that is passed.
-func pHashCompare(pHashList []store_phash) []dup_img {
+func pHashCompare(pHashList []store_phash, checkDistance int) []dup_img {
 	duplicateList := []dup_img{}
 	for i := 0; i < len(pHashList); i++ {
 		for j := i + 1; j < len(pHashList); j++ {
 			distance, _ := pHashList[i].imgPHash.Distance(pHashList[j].imgPHash)
-			if distance <= 2 {
+			if distance <= checkDistance {
 				img := dup_img{
 					imgPath1: pHashList[i].filename,
 					imgPath2: pHashList[j].filename,
@@ -147,7 +169,7 @@ func storePHashes(imgPHash *goimagehash.ImageHash, fileName string) *store_phash
 // Function that compares all iamges from a folder.
 // depending on the operation input it compares
 // only the hashes, only the pHashes or both.
-func checkDupes(operation int, folder string) {
+func checkDupes(operation int, folder string, distance int) {
 	duplicateImgs := []dup_img{}
 
 	switch operation {
@@ -219,7 +241,8 @@ func checkDupes(operation int, folder string) {
 			fmt.Println(err)
 		}
 
-		duplicateImgs := pHashCompare(pHashList)
+		duplicateImgs := pHashCompare(pHashList, distance)
+
 		prettyPrint(duplicateImgs)
 	case 3: // phash and has
 		fmt.Println("TODO - hash & phash")

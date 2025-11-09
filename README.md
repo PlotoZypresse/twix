@@ -83,3 +83,4 @@ MIT License
 - **Combined Mode (-hp)**: Planned feature that will use both methods for comprehensive detection
 
 Choose the mode based on your needs: use hash mode for quick exact duplicate finding, or perceptual mode when you suspect images have been resized, recompressed, or slightly modified.
+Always check images before deleting
