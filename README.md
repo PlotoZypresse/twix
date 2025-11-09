@@ -13,19 +13,21 @@ Make sure your `GOPATH` is in your `PATH` environment variable to use the instal
 ## Usage
 
 ```bash
-twix <folder-path> [mode]
+twix [mode] [distance] <folder-path>
 ```
 
 ### Arguments
 
-- `<folder-path>` - Directory to scan for duplicate images
 - `[mode]` - Optional operation mode (default: `-h`)
+- `[distance]` - Optional for setting distance threshold during pHash comparison (default: `5`)
+- `<folder-path>` - Directory to scan for duplicate images
 
-### Operation Modes
+### Flags
 
 - `-h` - Hash mode only (default): Uses SHA256 hashing to find exact duplicates
 - `-p` - Perceptual hash mode only: Uses perceptual hashing to find visually similar images
 - `-hp` - Both modes (currently displays "TODO" message)
+- `-distance=5` - Distance threshold for pHash comparison
 
 ## Features
 
@@ -46,11 +48,11 @@ twix employs two methods to detect duplicates:
 ## Example Output
 
 ```bash
-$ twix photos -h
+$ twix -h photos 
 Duplicate images found at: /photos/vacation/beach1.jpg and /photos/backup/beach-copy.jpg
 Finding duplicates took: 1.234s
 
-$ twix photos -p
+$ twix -p -distance=10 photos 
 Duplicate images found at: /photos/party/image.png and /photos/edited/party-edited.png
 Finding duplicates took: 3.456s
 ```

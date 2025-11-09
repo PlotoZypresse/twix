@@ -54,9 +54,11 @@ func main() {
 	operatingMode := 1
 	if hMode {
 		operatingMode = 1
-	} else if pMode {
+	}
+	if pMode {
 		operatingMode = 2
-	} else if hpMode {
+	}
+	if hpMode {
 		operatingMode = 3
 	}
 
@@ -64,25 +66,6 @@ func main() {
 	checkDupes(operatingMode, folderPath, distance)
 	elapsed := time.Since(now)
 	fmt.Println("Finding duplicates took: ", elapsed)
-}
-
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
-func inputFlag(flag string) int {
-	switch flag {
-	case "-h":
-		return 1
-	case "-p":
-		return 2
-	case "-hp":
-		return 3
-	default:
-		return 1
-	}
 }
 
 // reads the bytes of the image input and returns them.
@@ -171,6 +154,7 @@ func storePHashes(imgPHash *goimagehash.ImageHash, fileName string) *store_phash
 // only the hashes, only the pHashes or both.
 func checkDupes(operation int, folder string, distance int) {
 	duplicateImgs := []dup_img{}
+	fmt.Println(operation)
 
 	switch operation {
 	case 1: // only hash
