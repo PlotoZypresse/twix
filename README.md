@@ -1,5 +1,3 @@
-Here's the updated README that reflects the current functionality with multiple operation modes:
-
 # twix
 
 A command-line duplicate image finder written in Go. twix uses both cryptographic hashing and perceptual hashing to find exact duplicates and visually similar images in your directories.
