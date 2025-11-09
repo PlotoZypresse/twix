@@ -1,4 +1,4 @@
-module twix
+module github.com/PlotoZypresse/twix
 
 go 1.23.3
 
