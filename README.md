@@ -87,7 +87,8 @@ MIT License
 Choose the mode based on your needs: use hash mode for quick exact duplicate finding, or perceptual mode when you suspect images have been resized, recompressed, or slightly modified.
 
 ## Future
-The pHash comparison currently runs in $O(n^2)$ time. For large amount of images this option can take quite some time. Will eb worked on in the future
+The pHash comparison currently runs in $O(n^2)$ time. For large amount of images this option can take quite some time. Will eb worked on in the future.
+The combined mode of hash and pHash mode is not implemented yet.
 
 ## Misc
 Always check images before deleting
