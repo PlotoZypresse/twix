@@ -26,9 +26,20 @@ type store_phash struct {
 }
 
 func main() {
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: twix <folder path> [mode]")
+		os.Exit(1)
+	}
+
 	folderPath := os.Args[1]
+	flagIn := ""
+	if len(os.Args) > 2 {
+		flagIn = os.Args[2]
+	}
+
+	flag := inputFlag(flagIn)
 	now := time.Now()
-	checkDupes(2, folderPath)
+	checkDupes(flag, folderPath)
 	elapsed := time.Since(now)
 	fmt.Println("Finding duplicates took: ", elapsed)
 }
@@ -39,12 +50,27 @@ func check(e error) {
 	}
 }
 
+func inputFlag(flag string) int {
+	switch flag {
+	case "-h":
+		return 1
+	case "-p":
+		return 2
+	case "-hp":
+		return 3
+	default:
+		return 1
+	}
+}
+
 // reads the bytes of the image input and returns them.
 // takes a path to an image as input. Returns []bytes.
-func readImgBytes(imgPath string) []byte {
+func readImgBytes(imgPath string) ([]byte, error) {
 	data, err := os.ReadFile(imgPath)
-	check(err)
-	return data
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 // Function that hashes the bytes of an image.
@@ -139,7 +165,11 @@ func checkDupes(operation int, folder string) {
 				return nil
 			}
 
-			imgBytes := readImgBytes(path)
+			imgBytes, err := readImgBytes(path)
+			if err != nil {
+				return err
+			}
+
 			hash := hashImgBytes(imgBytes)
 			val := storeImgHashes(hash, path, hashMap)
 
@@ -149,7 +179,11 @@ func checkDupes(operation int, folder string) {
 
 			return nil
 		})
-		check(err)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		prettyPrint(duplicateImgs)
 	case 2: // only phash
 		pHashList := []store_phash{}
@@ -165,7 +199,11 @@ func checkDupes(operation int, folder string) {
 				return nil
 			}
 
-			imgBytes := readImgBytes(path)
+			imgBytes, err := readImgBytes(path)
+			if err != nil {
+				return err
+			}
+
 			pHash, err := pHashImgBytes(imgBytes)
 			if err != nil {
 				fmt.Printf("Warning: Skipping %s - %v\n", path, err)
@@ -176,12 +214,46 @@ func checkDupes(operation int, folder string) {
 
 			return nil
 		})
-		check(err)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		duplicateImgs := pHashCompare(pHashList)
 		prettyPrint(duplicateImgs)
 	case 3: // phash and has
-
+		fmt.Println("TODO - hash & phash")
 	default: // default is hash
+		var hashMap = make(map[string]string)
+		err := filepath.WalkDir(folder, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() {
+				return nil
+			}
+
+			if !isImage(path) {
+				return nil
+			}
+
+			imgBytes, err := readImgBytes(path)
+			if err != nil {
+				return err
+			}
+			hash := hashImgBytes(imgBytes)
+			val := storeImgHashes(hash, path, hashMap)
+
+			if val != nil {
+				duplicateImgs = append(duplicateImgs, *val)
+			}
+
+			return nil
+		})
+		if err != nil {
+			fmt.Println(err)
+		}
+		prettyPrint(duplicateImgs)
 	}
 }
 
