@@ -154,7 +154,6 @@ func storePHashes(imgPHash *goimagehash.ImageHash, fileName string) *store_phash
 // only the hashes, only the pHashes or both.
 func checkDupes(operation int, folder string, distance int) {
 	duplicateImgs := []dup_img{}
-	fmt.Println(operation)
 
 	switch operation {
 	case 1: // only hash
