@@ -86,6 +86,8 @@ MIT License
 
 Choose the mode based on your needs: use hash mode for quick exact duplicate finding, or perceptual mode when you suspect images have been resized, recompressed, or slightly modified.
 
+If the perceptual mode returns a lot of duplicates try lowering the value. If no or few duplicates are returned try a higher value. The optimal value depends on the images.
+
 ## Future
 The pHash comparison currently runs in $O(n^2)$ time. For large amount of images this option can take quite some time. Will eb worked on in the future.
 The combined mode of hash and pHash mode is not implemented yet.
