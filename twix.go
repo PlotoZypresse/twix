@@ -27,7 +27,6 @@ type store_phash struct {
 }
 
 func main() {
-
 	var distance int
 	var hMode bool
 	var pMode bool
@@ -157,7 +156,7 @@ func checkDupes(operation int, folder string, distance int) {
 
 	switch operation {
 	case 1: // only hash
-		var hashMap = make(map[string]string)
+		hashMap := make(map[string]string)
 		err := filepath.WalkDir(folder, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
@@ -184,7 +183,6 @@ func checkDupes(operation int, folder string, distance int) {
 
 			return nil
 		})
-
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -219,7 +217,6 @@ func checkDupes(operation int, folder string, distance int) {
 
 			return nil
 		})
-
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -228,9 +225,54 @@ func checkDupes(operation int, folder string, distance int) {
 
 		prettyPrint(duplicateImgs)
 	case 3: // phash and has
-		fmt.Println("TODO - hash & phash")
+		hashMap := make(map[string]string)
+		pHashList := []store_phash{}
+		err := filepath.WalkDir(folder, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() {
+				return nil
+			}
+
+			if !isImage(path) {
+				return nil
+			}
+
+			imgBytes, err := readImgBytes(path)
+			if err != nil {
+				return err
+			}
+
+			hash := hashImgBytes(imgBytes)
+			val := storeImgHashes(hash, path, hashMap)
+
+			if val != nil {
+				duplicateImgs = append(duplicateImgs, *val)
+			}
+
+			pHash, err := pHashImgBytes(imgBytes)
+			if err != nil {
+				fmt.Printf("Warning: Skipping %s - %v\n", path, err)
+				return nil
+			}
+			img := storePHashes(pHash, path)
+			pHashList = append(pHashList, *img)
+
+			return nil
+		})
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println("Duplicates found by Hash methode")
+		prettyPrint(duplicateImgs)
+
+		duplicateImgs := pHashCompare(pHashList, distance)
+		fmt.Println("\nDuplicates found by pHash methode")
+		prettyPrint(duplicateImgs)
+
 	default: // default is hash
-		var hashMap = make(map[string]string)
+		hashMap := make(map[string]string)
 		err := filepath.WalkDir(folder, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
@@ -279,5 +321,4 @@ func isImage(path string) bool {
 	default:
 		return false
 	}
-
 }
